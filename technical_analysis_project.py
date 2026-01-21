@@ -22,9 +22,9 @@ def create_engine_from_config():
     return create_engine(connection_string)
 
 
-def fetch_strong_buy_stocks(engine, min_market_cap: float, rec_key: str):
+def fetch_strong_buy_stocks(engine, min_market_cap: float, min_close_vs_200: float, max_close_vs_200: float, rec_key: str):
     """
-    Fetch stocks from the Stocks table filtered by Rec_Key and Market_cap.
+    Fetch stocks from the Stocks table filtered by Rec_Key, Market_cap, and Close_vs_200 range.
     """
     # Basic sanitization to avoid breaking the SQL if user types a quote
     rec_key_safe = rec_key.replace("'", "''")
@@ -38,12 +38,15 @@ def fetch_strong_buy_stocks(engine, min_market_cap: float, rec_key: str):
         Anlsts,
         Rec_Mean,
         Market_Cap,
+        Close_vs_200,
         `MTD Change`,
         `YTD Change`
     FROM Stocks 
-    WHERE Rec_Key = 'strong_buy'
+    WHERE Rec_Key = '{rec_key_safe}'
       AND Country = 'United States'
       AND Market_cap > {min_market_cap}
+      AND Close_vs_200 >= {min_close_vs_200}
+      AND Close_vs_200 <= {max_close_vs_200}
     
     """
 
@@ -297,8 +300,27 @@ def main(output_pdf: str = None):
         print("Invalid input. Falling back to default Market_cap > 20.")
         min_market_cap = 20.0
 
+    # Ask the user for the Close_vs_200 range filter
+    try:
+        user_input = input(
+            "Enter minimum Close_vs_200 (e.g. 0.95 for 95%): "
+        ).strip()
+        min_close_vs_200 = float(user_input) if user_input else 0.0
+    except ValueError:
+        print("Invalid input. Falling back to default minimum Close_vs_200 = 0.")
+        min_close_vs_200 = 0.0
+    
+    try:
+        user_input = input(
+            "Enter maximum Close_vs_200 (e.g. 1.20 for 120%): "
+        ).strip()
+        max_close_vs_200 = float(user_input) if user_input else 999.0
+    except ValueError:
+        print("Invalid input. Falling back to default maximum Close_vs_200 = 999.")
+        max_close_vs_200 = 999.0
+
     engine = create_engine_from_config()
-    df = fetch_strong_buy_stocks(engine, min_market_cap, rec_key)
+    df = fetch_strong_buy_stocks(engine, min_market_cap, min_close_vs_200, max_close_vs_200, rec_key)
     generate_technical_analysis_pdf(df, output_pdf, rec_key)
 
 
