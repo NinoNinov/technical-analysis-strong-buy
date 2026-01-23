@@ -60,7 +60,7 @@ def generate_technical_analysis_pdf(df: pd.DataFrame, output_path: str, rec_key:
     for each symbol in df (filtered by the chosen Rec_Key).
     """
     if df is None or df.empty:
-        print("No data returned for Rec_Key = 'strong_buy'. Nothing to plot.")
+        print(f"No data returned for Rec_Key = '{rec_key}'. Nothing to plot.")
         return
 
     list_of_stocks = df["symbol"].tolist()
@@ -90,7 +90,7 @@ def generate_technical_analysis_pdf(df: pd.DataFrame, output_path: str, rec_key:
 
                 # Fetch stock data from Yahoo Finance
                 stock_data = yf.download(
-                    ticker, start="2024-01-01", progress=False, auto_adjust=False
+                    str(ticker), start="2024-01-01", progress=False, auto_adjust=False
                 )
 
                 if stock_data.empty:
@@ -285,9 +285,9 @@ def main(output_pdf: str = None):
     ).strip()
     rec_key = rec_key_input if rec_key_input else "strong_buy"
 
-    # Generate default filename with current date if not provided
+    # Generate default filename with current date and time if not provided
     if output_pdf is None:
-        date_str = datetime.now().strftime("%Y-%m-%d")
+        date_str = datetime.now().strftime("%Y-%m-%d_%H-%M")
         output_pdf = f"strong_buy_{rec_key}_{date_str}.pdf"
 
     # Ask the user for the minimum market cap instead of using a fixed value (20)
@@ -305,10 +305,10 @@ def main(output_pdf: str = None):
         user_input = input(
             "Enter minimum Close_vs_200 (e.g. 0.95 for 95%): "
         ).strip()
-        min_close_vs_200 = float(user_input) if user_input else 0.0
+        min_close_vs_200 = float(user_input) if user_input else -999.0
     except ValueError:
-        print("Invalid input. Falling back to default minimum Close_vs_200 = 0.")
-        min_close_vs_200 = 0.0
+        print("Invalid input. Falling back to default minimum Close_vs_200 = -999.")
+        min_close_vs_200 = -999.0
     
     try:
         user_input = input(
